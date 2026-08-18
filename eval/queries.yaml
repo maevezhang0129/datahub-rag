@@ -1,0 +1,276 @@
+# Gold retrieval set for drr-rag.
+#
+# Provenance: hand-authored by the repository author against the frozen corpus
+# in eval/corpus/. Each query was written after reading the target document,
+# and deliberately paraphrases it rather than reusing its title words, so that
+# the dense and lexical arms are genuinely tested against each other instead of
+# both trivially matching a title.
+#
+# `relevant` lists documents that genuinely answer the query. Labels are
+# document-level, not chunk-level: a hit counts if any chunk of a relevant
+# document is retrieved.
+#
+# Known limitations, stated plainly:
+#   - Labels are sparse. A query may have unlabelled relevant documents in the
+#     corpus, so absolute recall is a lower bound. Relative comparison between
+#     modes stays valid, since every mode is scored against the same labels.
+#   - Targets are Wikipedia documents, which are longer and more definitional
+#     than the OpenAlex abstracts that make up most of the corpus. The OpenAlex
+#     documents therefore act mainly as distractors.
+#   - `tags` records what each query is meant to probe, so per-tag breakdowns
+#     can show where each mode wins.
+
+queries:
+  # ---- definitional: heavy paraphrase, little term overlap -----------------
+  - id: q001
+    query: how organisations plan to keep running when something major disrupts them
+    relevant: [wikipedia:91099]
+    tags: [definition, paraphrase]
+  - id: q002
+    query: reducing the harm hazards cause rather than just responding afterwards
+    relevant: [wikipedia:10204330]
+    tags: [definition, paraphrase]
+  - id: q003
+    query: legal term for an event nobody can be held responsible for
+    relevant: [wikipedia:529093]
+    tags: [definition, paraphrase]
+  - id: q004
+    query: a neighbourhood's capacity to absorb a shock and bounce back
+    relevant: [wikipedia:45439918]
+    tags: [definition, paraphrase]
+  - id: q005
+    query: organised civilian protection of the population during wartime attack
+    relevant: [wikipedia:7059]
+    tags: [definition, paraphrase]
+  - id: q006
+    query: a written plan for what to do if the expected situation does not hold
+    relevant: [wikipedia:9308997]
+    tags: [definition, paraphrase]
+  - id: q007
+    query: adjusting human systems to cope with a warming planet
+    relevant: [wikipedia:4607152]
+    tags: [definition, paraphrase]
+  - id: q008
+    query: coordinating preparedness response and recovery for major incidents
+    relevant: [wikipedia:1455589]
+    tags: [definition, paraphrase]
+  - id: q009
+    query: taking protective steps before a predicted shock actually arrives
+    relevant: [wikipedia:78566799]
+    tags: [definition, paraphrase]
+  - id: q010
+    query: relief given to people suffering after catastrophe or conflict
+    relevant: [wikipedia:434679]
+    tags: [definition, paraphrase]
+
+  # ---- mechanism / how-and-why --------------------------------------------
+  - id: q011
+    query: why the ground shakes and how the rupture spreads along a fault
+    relevant: [wikipedia:40866009, wikipedia:10106]
+    tags: [mechanism]
+  - id: q012
+    query: what causes a spinning column of flame to form during a fire
+    relevant: [wikipedia:2664780]
+    tags: [mechanism]
+  - id: q013
+    query: how warm ocean water and cloud physics drive storm intensification
+    relevant: [wikipedia:26617950, wikipedia:8282374]
+    tags: [mechanism]
+  - id: q014
+    query: rapid mixture of water and rock moving down a slope
+    relevant: [wikipedia:4415356]
+    tags: [mechanism]
+  - id: q015
+    query: mass of snow sliding suddenly down a mountainside
+    relevant: [wikipedia:73321]
+    tags: [mechanism]
+  - id: q016
+    query: soil losing strength and deforming after shaking
+    relevant: [wikipedia:68154714]
+    tags: [mechanism]
+  - id: q017
+    query: why local geology makes shaking worse at some sites than others
+    relevant: [wikipedia:43681280]
+    tags: [mechanism]
+  - id: q018
+    query: boundary inside the planet between the mantle and the core
+    relevant: [wikipedia:1884338]
+    tags: [mechanism, rare-term]
+  - id: q019
+    query: weather conditions that make vegetation fires spread faster
+    relevant: [wikipedia:83899305]
+    tags: [mechanism]
+  - id: q020
+    query: how plants survive extreme water loss
+    relevant: [wikipedia:19889138]
+    tags: [mechanism]
+
+  # ---- rare / technical terms: lexical arm should have an edge -------------
+  - id: q021
+    query: Keetch-Byram index
+    relevant: [wikipedia:10777584]
+    tags: [rare-term, lexical-favoured]
+  - id: q022
+    query: Palmer drought severity index
+    relevant: [wikipedia:211041]
+    tags: [rare-term, lexical-favoured]
+  - id: q023
+    query: SPEI standardised precipitation evapotranspiration
+    relevant: [wikipedia:71342728]
+    tags: [rare-term, lexical-favoured]
+  - id: q024
+    query: QuakeML
+    relevant: [wikipedia:47714161]
+    tags: [rare-term, lexical-favoured]
+  - id: q025
+    query: magnitude of completeness in an earthquake catalogue
+    relevant: [wikipedia:46411947]
+    tags: [rare-term, lexical-favoured]
+  - id: q026
+    query: radius of outermost closed isobar
+    relevant: [wikipedia:18434469]
+    tags: [rare-term, lexical-favoured]
+  - id: q027
+    query: CENAPRED
+    relevant: [wikipedia:2937659]
+    tags: [rare-term, lexical-favoured, entity]
+  - id: q028
+    query: CEDEMA Caribbean disaster agency
+    relevant: [wikipedia:562400]
+    tags: [rare-term, entity]
+  - id: q029
+    query: Advanced National Seismic System
+    relevant: [wikipedia:56533997]
+    tags: [rare-term, lexical-favoured, entity]
+  - id: q030
+    query: Gutenberg discontinuity
+    relevant: [wikipedia:1884338]
+    tags: [rare-term, lexical-favoured]
+
+  # ---- entity / organisation ----------------------------------------------
+  - id: q031
+    query: American humanitarian organisation providing disaster relief and blood services
+    relevant: [wikipedia:4345474]
+    tags: [entity]
+  - id: q032
+    query: database tracking violence against relief staff
+    relevant: [wikipedia:61156998, wikipedia:331887]
+    tags: [entity, paraphrase]
+  - id: q033
+    query: airlift that flew supplies into a blockaded secessionist region of Nigeria
+    relevant: [wikipedia:38221367]
+    tags: [entity, historical]
+  - id: q034
+    query: Honduras permanent contingency commission
+    relevant: [wikipedia:31173544]
+    tags: [entity]
+  - id: q035
+    query: collaborative model estimating seismic hazard worldwide
+    relevant: [wikipedia:23793839]
+    tags: [entity, paraphrase]
+  - id: q036
+    query: Japanese rapid deployment unit for disasters
+    relevant: [wikipedia:10417268]
+    tags: [entity]
+
+  # ---- operational / procedural -------------------------------------------
+  - id: q037
+    query: reversing highway direction so everyone can leave a threatened area
+    relevant: [wikipedia:2288504]
+    tags: [procedure, paraphrase]
+  - id: q038
+    query: temporary facility set up when hospitals run out of beds
+    relevant: [wikipedia:66069171]
+    tags: [procedure, paraphrase]
+  - id: q039
+    query: forward point where injured people receive initial treatment
+    relevant: [wikipedia:7994049]
+    tags: [procedure, paraphrase]
+  - id: q040
+    query: hardened structure built to survive an explosion
+    relevant: [wikipedia:1867633]
+    tags: [procedure, paraphrase]
+  - id: q041
+    query: estimating how many people will be hurt or killed by an event
+    relevant: [wikipedia:17178522]
+    tags: [procedure, paraphrase]
+  - id: q042
+    query: protecting troops against chemical biological and nuclear threats
+    relevant: [wikipedia:645951]
+    tags: [procedure]
+  - id: q043
+    query: stabilising a burned watershed to prevent further damage
+    relevant: [wikipedia:10019499]
+    tags: [procedure, paraphrase]
+  - id: q044
+    query: airports helping each other after a disruption
+    relevant: [wikipedia:41108484]
+    tags: [procedure]
+  - id: q045
+    query: exposure thresholds for airborne chemicals at which health effects begin
+    relevant: [wikipedia:35304370]
+    tags: [procedure, paraphrase]
+  - id: q046
+    query: training system that simulates managing a large incident
+    relevant: [wikipedia:28832428]
+    tags: [procedure, paraphrase]
+
+  # ---- regional / country-specific ----------------------------------------
+  - id: q047
+    query: how a low-lying south asian delta country is coping with rising seas
+    relevant: [wikipedia:34151275]
+    tags: [regional, paraphrase]
+  - id: q048
+    query: island nation in southeast asia adapting to typhoons and sea level rise
+    relevant: [wikipedia:73404335]
+    tags: [regional, paraphrase]
+  - id: q049
+    query: west african country adapting agriculture to a drying climate
+    relevant: [wikipedia:73345980]
+    tags: [regional, paraphrase]
+  - id: q050
+    query: coastal defence planning on the north sea shoreline of germany
+    relevant: [wikipedia:57531202]
+    tags: [regional]
+  - id: q051
+    query: earthquake that struck the los angeles area in 1971
+    relevant: [wikipedia:577221]
+    tags: [regional, historical]
+  - id: q052
+    query: flooding that displaced people in south sudan during 2024
+    relevant: [wikipedia:77864613]
+    tags: [regional, recency]
+  - id: q053
+    query: landslide in greenland that triggered a wave in 2023
+    relevant: [wikipedia:77872028]
+    tags: [regional, recency]
+
+  # ---- prediction and measurement -----------------------------------------
+  - id: q054
+    query: can scientists say when and where the next quake will strike
+    relevant: [wikipedia:231137, wikipedia:11353408]
+    tags: [mechanism, paraphrase]
+  - id: q055
+    query: drought that develops unusually quickly over a few weeks
+    relevant: [wikipedia:73686929]
+    tags: [definition, paraphrase]
+  - id: q056
+    query: dry period lasting decades rather than seasons
+    relevant: [wikipedia:32760552]
+    tags: [definition, paraphrase]
+  - id: q057
+    query: abrupt climate event around 2200 BC linked to societal collapse
+    relevant: [wikipedia:8928747, wikipedia:5823212]
+    tags: [historical, paraphrase]
+  - id: q058
+    query: attempts to artificially induce precipitation
+    relevant: [wikipedia:2044964]
+    tags: [mechanism, paraphrase]
+  - id: q059
+    query: unusually large and destructive vegetation fire
+    relevant: [wikipedia:62930314, wikipedia:56106]
+    tags: [definition, paraphrase]
+  - id: q060
+    query: removing dead timber after a fire and the debate around it
+    relevant: [wikipedia:11775818]
+    tags: [procedure, paraphrase]

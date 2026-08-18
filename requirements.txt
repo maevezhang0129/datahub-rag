@@ -1,0 +1,21 @@
+# Core pipeline
+psycopg[binary]>=3.2
+pgvector>=0.3.6
+tiktoken>=0.8
+beautifulsoup4>=4.12
+requests>=2.32
+
+# Local embedding backend (default; no API key required)
+sentence-transformers>=3.0
+torch>=2.2
+
+# API
+fastapi>=0.115
+uvicorn[standard]>=0.32
+
+# Evaluation
+numpy>=1.26
+PyYAML>=6.0
+
+# Optional hosted embedding backend
+openai>=1.50
