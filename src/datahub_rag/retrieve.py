@@ -248,6 +248,18 @@ def search(
     return [Result.from_row(r) for r in rows]
 
 
+def top_similarity(query: str, model_key: str | None = None) -> float:
+    """Best dense cosine similarity in the corpus for `query`.
+
+    Used as a relevance gate. Deliberately the dense score rather than the
+    hybrid one: RRF produces reciprocal-rank sums with no absolute meaning
+    (~0.05 regardless of match quality), so a threshold on them is
+    uninterpretable. Cosine similarity is comparable across queries.
+    """
+    hits = search(query, mode="vector", top_k=1, model_key=model_key)
+    return hits[0].score if hits else 0.0
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Query the DRR knowledge base.")
     ap.add_argument("query")

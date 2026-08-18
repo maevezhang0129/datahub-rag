@@ -11,6 +11,8 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from . import config, embed, retrieve, store
+from .chat.llm import get_llm
+from .chat.session import ChatSession
 
 logger = logging.getLogger("datahub_rag.api")
 
@@ -120,3 +122,66 @@ def search(
 @app.get("/stats")
 def stats() -> dict:
     return store.corpus_stats()
+
+
+# --------------------------------------------------------------------------
+# Conversational endpoints
+# --------------------------------------------------------------------------
+
+class ChatRequest(BaseModel):
+    question: str = Field(..., min_length=2)
+    session_id: Optional[int] = Field(None, description="omit to start a new session")
+    mode: Literal["vector", "lexical", "hybrid"] = "hybrid"
+
+
+class ChatResponse(BaseModel):
+    session_id: Optional[int]
+    question: str
+    answer: str
+    refused: bool
+    took_ms: float
+    interpretation: dict
+    guard: dict
+    citations: dict
+    sources: List[dict]
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest) -> ChatResponse:
+    """Ask a grounded question.
+
+    The response carries the interpretation, the guard verdict and the citation
+    audit alongside the answer, so a caller can see how the answer was produced
+    rather than only what it says.
+    """
+    started = time.perf_counter()
+    try:
+        session = ChatSession(session_id=request.session_id, mode=request.mode)
+        turn = session.ask(request.question)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"chat failed: {exc}") from exc
+
+    return ChatResponse(
+        session_id=session.session_id,
+        took_ms=round((time.perf_counter() - started) * 1000, 2),
+        **turn.as_dict(),
+    )
+
+
+@app.get("/chat/{session_id}/history")
+def chat_history(session_id: int) -> dict:
+    try:
+        session = ChatSession(session_id=session_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {
+        "session_id": session_id,
+        "memory": session.memory.as_dict(),
+        "messages": [
+            {"role": m["role"], "content": m["content"], "meta": m["meta"],
+             "created_at": m["created_at"].isoformat()}
+            for m in session.history()
+        ],
+    }

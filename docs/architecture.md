@@ -76,5 +76,46 @@ the evaluation harness; without that, a mode returning five chunks of one
 document would score the same as one returning five distinct relevant
 documents.
 
+## Conversational layer
+
+```
+question
+   │
+   ├─▶ guard          regulated-advice check (deterministic, pre-retrieval)
+   │
+   ├─▶ interpret      one model call -> {mode, query_terms, entities, is_followup}
+   │
+   ├─▶ build_query    follow-ups merged with the running subject
+   │
+   ├─▶ relevance gate top-1 dense cosine vs MIN_RELEVANCE ──▶ refuse if below
+   │
+   ├─▶ retrieve       hybrid, over-fetched then capped per document
+   │
+   ├─▶ generate       grounded answer, citations required
+   │
+   ├─▶ audit          validate every [n]; strip fabricated ones; score groundedness
+   │
+   └─▶ remember       subject + window + term counts, no model call
+```
+
+Two stages are deliberately **not** the model's job:
+
+- The **guard** is keyword-driven and runs before retrieval. A guardrail that
+  depends on the model behaving is not a guardrail, and one that fails open on
+  an API error is worse than none.
+- The **citation audit** verifies rather than trusts. Asking a model to cite is
+  not the same as it having cited: markers pointing at sources that do not
+  exist are stripped, and the proportion of sentences carrying a citation is
+  recorded per answer.
+
+`chat_context_chunks` stores exactly which chunks were shown for each answer,
+with a `was_cited` flag. Without that, a wrong answer cannot be diagnosed —
+there is no way to tell whether retrieval missed the evidence or generation
+ignored it.
+
+The `stub` LLM backend is a first-class implementation, not a test double. It
+makes interpretation and memory fully deterministic, so the entire
+conversational chain runs, demos and unit-tests with no API key.
+
 See [`evaluation.md`](evaluation.md) for measured behaviour and
 [`adr/`](adr/) for the reasoning behind the main choices.

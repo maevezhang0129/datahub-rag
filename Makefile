@@ -30,6 +30,12 @@ test:  ## Run the test suite
 eval:  ## Run the retrieval evaluation and write eval/results/
 	$(COMPOSE) run --rm pipeline python -m eval.run_eval
 
+eval-chat:  ## Evaluate the chat layer (citations, guard, refusal)
+	$(COMPOSE) run --rm pipeline python -m eval.run_chat_eval
+
+chat:  ## Interactive chat CLI
+	$(COMPOSE) run --rm pipeline python -m datahub_rag.chat.cli
+
 eval-weights:  ## Evaluate and sweep the RRF arm weights
 	$(COMPOSE) run --rm pipeline python -m eval.run_eval --weights
 
@@ -39,4 +45,4 @@ eval-sweep:  ## Re-chunk at 0/25/50% overlap and evaluate each
 corpus:  ## Re-fetch the frozen corpus from the public APIs
 	python scripts/fetch_corpus.py
 
-.PHONY: help up down clean logs pipeline shell test eval eval-weights eval-sweep corpus
+.PHONY: help up down clean logs pipeline shell test chat eval eval-chat eval-weights eval-sweep corpus

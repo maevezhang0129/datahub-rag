@@ -139,6 +139,60 @@ Fixing it properly means denser labels, which means either multiple annotators
 or pooled judgements across systems — the standard approach, and out of scope
 at this size.
 
+## Chat layer
+
+`make eval-chat` measures four properties the retrieval evaluation cannot.
+
+**Read the groundedness figure carefully.** Under the default stub backend the
+answer text is extractive by construction, so groundedness is trivially 1.000.
+That number measures the *audit machinery* — that markers are parsed, validated
+against the real source list, and fabricated ones stripped — not a model's
+honesty. Run with `DATAHUB_CHAT_BACKEND=openai` to make it a claim about a
+real model.
+
+| metric | in-domain (10) | out-of-domain (6) |
+|---|---|---|
+| groundedness | 1.000 | — (refused) |
+| answers with fabricated citations | 0 | 0 |
+| mean distinct documents per answer | 6.40 | — |
+| refusal rate | 0.000 | **1.000** |
+| expected refusal rate | 0.000 | 1.000 |
+
+| regulated-advice guard | value |
+|---|---|
+| recall | 1.000 |
+| precision | 1.000 |
+| correct domain assigned | 1.000 |
+| false positives on benign questions | 0 / 6 |
+
+### The finding that mattered
+
+The first run measured **0% out-of-domain refusal against an expected 100%**.
+Every unanswerable question — Kubernetes configuration, the offside rule,
+tiramisu — produced a confidently cited answer, because dense retrieval returns
+its top-k regardless of how weak the match is, and the answer stage cannot tell
+distant neighbours from good context.
+
+The answer prompt already instructed the model to refuse when the sources did
+not answer the question. It complied with the letter of that instruction: the
+sources genuinely *looked* like they answered it.
+
+Measuring the score distributions showed the two groups separate cleanly:
+
+| group | min | median | max |
+|---|---|---|---|
+| answerable | **0.743** | 0.830 | 0.924 |
+| unanswerable | 0.521 | 0.536 | **0.629** |
+
+A relevance floor at 0.68 — inside the gap — took out-of-domain refusal to
+100% with no effect on in-domain answers. See
+[ADR 005](adr/005-relevance-gate-before-answering.md).
+
+Two limitations worth stating: the threshold is calibrated on the same 16
+questions used to report the result, which with a gap this wide is defensible
+but is not a held-out evaluation; and it is specific to this corpus and
+embedding model, since both change the cosine scale.
+
 ## Reproducing
 
 ```bash
@@ -146,6 +200,7 @@ make up            # postgres + pipeline + api
 make eval          # mode comparison
 make eval-weights  # + RRF weight sweep
 make eval-sweep    # + overlap sweep (rebuilds the index three times, ~10 min)
+make eval-chat     # chat layer: citations, guard, refusal
 ```
 
 Results are written to `eval/results/latest.md` and `latest.json`.

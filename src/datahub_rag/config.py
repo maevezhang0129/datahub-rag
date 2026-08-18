@@ -68,6 +68,18 @@ HYBRID_CANDIDATES = int(os.getenv("DRR_HYBRID_CANDIDATES", "200"))
 BM25_MIN_RANK = float(os.getenv("DRR_BM25_MIN_RANK", "0.01"))
 
 
+# Minimum dense cosine similarity for the corpus to be considered capable of
+# answering a question at all. Below this the chat layer refuses instead of
+# assembling an answer from whatever the ANN happened to return.
+#
+# Calibrated, not guessed: on eval/chat_queries.yaml the top-1 cosine for
+# answerable questions bottoms out at 0.743 while unanswerable ones top out at
+# 0.629. 0.68 sits in that gap. It is specific to this corpus AND this
+# embedding model -- both change the scale, so re-run `make eval-chat` after
+# changing either.
+MIN_RELEVANCE = float(os.getenv("DATAHUB_MIN_RELEVANCE", "0.68"))
+
+
 def get_model(model_key: str | None = None) -> Dict[str, Any]:
     """Return the spec for `model_key`, defaulting to the configured model."""
     key = model_key or DEFAULT_MODEL

@@ -1,9 +1,10 @@
 # datahub-rag
 
-A hybrid retrieval system over disaster risk reduction literature: token-aware
-chunking, pgvector dense search, PostgreSQL full-text lexical search, weighted
-Reciprocal Rank Fusion, and an evaluation harness that measures whether any of
-it actually helps.
+A grounded question-answering system over disaster risk reduction literature:
+token-aware chunking, pgvector dense search, PostgreSQL full-text lexical
+search, weighted Reciprocal Rank Fusion, a conversational layer with verified
+citations, and an evaluation harness that measures whether any of it actually
+helps.
 
 Runs end to end with **one command and no API keys**.
 
@@ -43,7 +44,7 @@ reproducible with `make eval-weights`.
 | lexical (full-text) | 0.475 | 0.642 | 0.908 | 0.607 | 0.676 | 17 |
 | hybrid RRF 3:1 | 0.708 | **0.933** | **0.983** | 0.838 | **0.875** | 46 |
 
-### Three findings worth the space
+### Four findings worth the space
 
 **1. Textbook RRF made retrieval worse.** Equal-weight fusion — the standard
 default — scored *below* pure dense retrieval (MRR 0.796 vs 0.847), because it
@@ -62,6 +63,16 @@ win.** On rare-technical-string queries (`QuakeML`, `Keetch-Byram index`),
 dense scored 1.000 top-1 and hybrid 0.778 — because at 473 documents a
 distinctive term is already unambiguous to the embedding model, while the
 lexical arm drags up documents matching only the common words.
+
+**4. The chat layer refused 0% of unanswerable questions — while being
+explicitly prompted to refuse.** Ask it to configure a Kubernetes ingress and
+it returned a confidently cited answer, because dense retrieval always returns
+its top-k however distant, and the answer stage cannot tell far neighbours from
+good context. The prompt instruction was obeyed to the letter; the sources
+genuinely looked relevant. A relevance floor calibrated against the measured
+score gap (answerable ≥ 0.743, unanswerable ≤ 0.629) took refusal to 100% with
+no effect on in-domain answers. **A behaviour you need is not a behaviour you
+can prompt for.**
 
 Full methodology, per-query-type breakdowns, stated limitations, and a failure
 analysis of the one query every mode misses: **[docs/evaluation.md](docs/evaluation.md)**.
@@ -88,6 +99,13 @@ Wikipedia + OpenAlex  ──fetch──▶  frozen JSONL corpus  ──seed─�
                                   FastAPI /search
 ```
 
+- **Grounded chat** with a verified citation audit: every `[n]` marker is
+  validated against the sources actually supplied, fabricated ones are
+  stripped, and per-answer groundedness is recorded
+- **Regulated-advice guardrail** (financial / legal / medical / emergency),
+  deterministic and pre-retrieval, so it cannot fail open on a model error
+- **Retrieval audit trail** — `chat_context_chunks` stores exactly which chunks
+  were shown for each answer and which were cited
 - **Multi-source ingest** from two public APIs requiring no credentials, frozen
   into a committed corpus so results are reproducible offline
 - **Token-aware chunking** on `cl100k_base` with configurable overlap; text is
@@ -108,23 +126,33 @@ measurement rather than the received wisdom:
 - [ADR 002 — Weighted RRF, not weighted score fusion](docs/adr/002-rrf-over-score-fusion.md)
 - [ADR 003 — Postgres + pgvector rather than a dedicated vector database](docs/adr/003-postgres-not-a-vector-database.md)
 - [ADR 004 — Local embeddings by default](docs/adr/004-local-embeddings-by-default.md)
+- [ADR 005 — A calibrated relevance gate, not a prompt instruction](docs/adr/005-relevance-gate-before-answering.md)
+- [ADR 006 — Conversation memory without an LLM call](docs/adr/006-memory-without-an-llm.md)
 
 System overview: [docs/architecture.md](docs/architecture.md).
 
 ## Usage
 
 ```bash
-# Retrieval from the CLI
+make chat          # interactive grounded chat (no API key needed)
+
+# One-shot, with the full audit as JSON
+docker compose run --rm pipeline \
+  python -m datahub_rag.chat.cli --ask "what causes flash droughts" --json
+
+# Retrieval only
 docker compose run --rm pipeline \
   python -m datahub_rag.retrieve "how do communities prepare for flooding" --mode hybrid
 
 # HTTP
 curl 'localhost:8000/search?q=early+warning+systems&mode=hybrid&top_k=5'
-curl 'localhost:8000/search?q=drought&source=wikipedia&published_from=2015-01-01'
+curl -X POST localhost:8000/chat -H 'Content-Type: application/json' \
+     -d '{"question":"what makes wildfires spread faster"}'
 curl localhost:8000/health
 
-make test          # 34 unit tests + integration tests against the live index
-make eval          # reproduce the results table
+make test          # 118 tests: unit + integration against the live index
+make eval          # reproduce the retrieval results table
+make eval-chat     # chat layer: citations, guard, refusal
 make eval-weights  # RRF weight sweep
 make eval-sweep    # chunk overlap sweep
 make clean         # tear down, including the database volume
@@ -132,7 +160,12 @@ make clean         # tear down, including the database volume
 
 Tuning is via environment variables (see [.env.example](.env.example)):
 `DRR_CHUNK_TOKENS`, `DRR_CHUNK_OVERLAP_PCT`, `DRR_RRF_K`,
-`DRR_RRF_WEIGHT_VECTOR`, `DRR_RRF_WEIGHT_LEXICAL`, `DRR_BM25_MIN_RANK`.
+`DRR_RRF_WEIGHT_VECTOR`, `DRR_RRF_WEIGHT_LEXICAL`, `DRR_BM25_MIN_RANK`,
+`DATAHUB_MIN_RELEVANCE`.
+
+The chat layer defaults to a deterministic **stub** backend so it runs with no
+API key. Set `DATAHUB_CHAT_BACKEND=openai` plus `OPENAI_API_KEY` (or the
+`AZURE_OPENAI_*` trio) for a real model.
 
 To use hosted embeddings instead of the local model, set
 `DRR_EMBED_MODEL=text-embedding-3-small` plus `OPENAI_API_KEY` (or the
@@ -143,6 +176,7 @@ live in one table per model.
 
 ```
 src/datahub_rag/     chunk · embed · retrieve · api · seed · store · pipeline
+  chat/            llm · interpret · guard · answer · memory · session · cli
 db/migrations/   schema (generated tsvector column, HNSW indexes)
 eval/            gold query set, metrics, harness, frozen corpus
 docs/            architecture, evaluation, ADRs
@@ -162,9 +196,14 @@ Honest list, since a portfolio project that claims none is not credible:
 - **No asset enrichment.** The original system extracted text from PDFs, DOCX
   and video transcripts. Here every document arrives as clean text, so that
   stage has no analogue.
-- **Retrieval only.** There is no generation, citation enforcement, or
-  conversational layer yet — this is the retrieval half of RAG, measured
-  properly, rather than the whole thing measured not at all.
+- **Groundedness is not yet a claim about a real model.** Under the default
+  stub backend the answer text is extractive by construction, so groundedness
+  is trivially 1.000 — that measures the audit machinery, not model honesty.
+  Run with a hosted backend to make it meaningful.
+- **The relevance threshold is calibrated on the same 16 questions it is
+  reported against.** The gap is wide and clean, but this is not a held-out
+  evaluation.
+- **No web UI.** Chat is CLI and HTTP only.
 
 ## License
 
