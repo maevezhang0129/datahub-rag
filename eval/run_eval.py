@@ -20,8 +20,8 @@ from typing import Dict, List, Sequence, Set
 
 import yaml
 
-from drr_rag import chunk as chunk_stage
-from drr_rag import config, embed, retrieve, store
+from datahub_rag import chunk as chunk_stage
+from datahub_rag import config, embed, retrieve, store
 
 from .metrics import ndcg_at_k, percentile, recall_at_k, reciprocal_rank
 

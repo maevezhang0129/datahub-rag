@@ -19,4 +19,4 @@ SentenceTransformer('BAAI/bge-small-en-v1.5', cache_folder='/models')"
 
 COPY . .
 
-CMD ["uvicorn", "drr_rag.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "datahub_rag.api:app", "--host", "0.0.0.0", "--port", "8000"]

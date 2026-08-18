@@ -90,5 +90,5 @@ def embedding_table(model_key: str) -> str:
 def database_url() -> str:
     return os.getenv(
         "DATABASE_URL",
-        "postgresql://drr:drr@localhost:5432/drr_rag",
+        "postgresql://drr:drr@localhost:5432/datahub_rag",
     )

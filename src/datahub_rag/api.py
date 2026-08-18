@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from . import config, embed, retrieve, store
 
-logger = logging.getLogger("drr_rag.api")
+logger = logging.getLogger("datahub_rag.api")
 
 
 @asynccontextmanager
@@ -36,7 +36,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="drr-rag",
+    title="datahub-rag",
     version="0.1.0",
     description=(
         "Retrieval over disaster risk reduction literature. "

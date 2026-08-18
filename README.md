@@ -1,4 +1,4 @@
-# drr-rag
+# datahub-rag
 
 A hybrid retrieval system over disaster risk reduction literature: token-aware
 chunking, pgvector dense search, PostgreSQL full-text lexical search, weighted
@@ -8,7 +8,7 @@ it actually helps.
 Runs end to end with **one command and no API keys**.
 
 ```bash
-git clone https://github.com/<you>/drr-rag && cd drr-rag
+git clone https://github.com/<you>/datahub-rag && cd datahub-rag
 make up          # postgres + pgvector, seed, chunk, embed, serve
 open http://localhost:8000/docs
 ```
@@ -116,7 +116,7 @@ System overview: [docs/architecture.md](docs/architecture.md).
 ```bash
 # Retrieval from the CLI
 docker compose run --rm pipeline \
-  python -m drr_rag.retrieve "how do communities prepare for flooding" --mode hybrid
+  python -m datahub_rag.retrieve "how do communities prepare for flooding" --mode hybrid
 
 # HTTP
 curl 'localhost:8000/search?q=early+warning+systems&mode=hybrid&top_k=5'
@@ -142,7 +142,7 @@ live in one table per model.
 ## Layout
 
 ```
-src/drr_rag/     chunk · embed · retrieve · api · seed · store · pipeline
+src/datahub_rag/     chunk · embed · retrieve · api · seed · store · pipeline
 db/migrations/   schema (generated tsvector column, HNSW indexes)
 eval/            gold query set, metrics, harness, frozen corpus
 docs/            architecture, evaluation, ADRs

@@ -1,4 +1,4 @@
-# Gold retrieval set for drr-rag.
+# Gold retrieval set for datahub-rag.
 #
 # Provenance: hand-authored by the repository author against the frozen corpus
 # in eval/corpus/. Each query was written after reading the target document,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from drr_rag.chunk import chunk_text, clean_text, window_starts
+from datahub_rag.chunk import chunk_text, clean_text, window_starts
 
 
 def starts(n, max_tokens, overlap):

@@ -2,7 +2,7 @@
 
 ## What this repository is
 
-`drr-rag` is an **independent reimplementation** of a retrieval-augmented
+`datahub-rag` is an **independent reimplementation** of a retrieval-augmented
 generation architecture for disaster risk reduction (DRR) literature, built by
 me (Siwei Zhang) on public data from Wikipedia and OpenAlex.
 

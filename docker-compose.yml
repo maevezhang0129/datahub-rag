@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_USER: drr
       POSTGRES_PASSWORD: drr
-      POSTGRES_DB: drr_rag
+      POSTGRES_DB: datahub_rag
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U drr -d drr_rag"]
+      test: ["CMD-SHELL", "pg_isready -U drr -d datahub_rag"]
       interval: 3s
       timeout: 3s
       retries: 20
@@ -19,16 +19,16 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
     environment:
-      DATABASE_URL: postgresql://drr:drr@postgres:5432/drr_rag
+      DATABASE_URL: postgresql://drr:drr@postgres:5432/datahub_rag
     volumes: ["models:/models"]
-    command: python -m drr_rag.pipeline
+    command: python -m datahub_rag.pipeline
 
   api:
     build: .
     depends_on:
       pipeline: {condition: service_completed_successfully}
     environment:
-      DATABASE_URL: postgresql://drr:drr@postgres:5432/drr_rag
+      DATABASE_URL: postgresql://drr:drr@postgres:5432/datahub_rag
     ports: ["8000:8000"]
     volumes: ["models:/models"]
 

@@ -26,7 +26,7 @@ from typing import Any, Dict, Iterable, List
 import requests
 
 CORPUS_DIR = pathlib.Path(__file__).resolve().parents[1] / "eval" / "corpus"
-UA = "drr-rag-portfolio/0.1 (https://github.com/; educational portfolio project)"
+UA = "datahub-rag-portfolio/0.1 (https://github.com/; educational portfolio project)"
 MAX_BODY_CHARS = 40_000
 
 WIKIPEDIA_CATEGORIES = [

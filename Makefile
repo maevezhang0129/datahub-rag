@@ -22,7 +22,7 @@ pipeline:  ## Re-run migrate -> seed -> chunk -> embed
 	$(COMPOSE) run --rm pipeline
 
 shell:  ## psql into the database
-	$(COMPOSE) exec postgres psql -U drr -d drr_rag
+	$(COMPOSE) exec postgres psql -U drr -d datahub_rag
 
 test:  ## Run the test suite
 	$(COMPOSE) run --rm --entrypoint pytest pipeline -q

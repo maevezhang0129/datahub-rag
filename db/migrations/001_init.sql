@@ -1,6 +1,6 @@
--- drr-rag base schema: documents + chunks.
+-- datahub-rag base schema: documents + chunks.
 -- Embedding tables are created per model by ensure_embedding_table() in
--- src/drr_rag/store.py, so several models can be indexed side by side.
+-- src/datahub_rag/store.py, so several models can be indexed side by side.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 

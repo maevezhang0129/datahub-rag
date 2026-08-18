@@ -6,7 +6,7 @@ than failing, so `pytest` is still useful without Postgres.
 
 import pytest
 
-from drr_rag import config, retrieve, store
+from datahub_rag import config, retrieve, store
 
 
 @pytest.fixture(scope="module")

@@ -38,13 +38,13 @@ The fetch step runs once and its output is committed. Everything downstream of
 
 | Stage | Module | Idempotency |
 |---|---|---|
-| seed | `drr_rag/seed.py` | upsert keyed on `(source, source_id)`; the update is suppressed when `content_hash` is unchanged |
-| chunk | `drr_rag/chunk.py` | a document whose chunks carry its current `content_hash` is skipped |
-| embed | `drr_rag/embed.py` | only chunks absent from the model's embedding table are processed |
-| retrieve | `drr_rag/retrieve.py` | read-only |
+| seed | `datahub_rag/seed.py` | upsert keyed on `(source, source_id)`; the update is suppressed when `content_hash` is unchanged |
+| chunk | `datahub_rag/chunk.py` | a document whose chunks carry its current `content_hash` is skipped |
+| embed | `datahub_rag/embed.py` | only chunks absent from the model's embedding table are processed |
+| retrieve | `datahub_rag/retrieve.py` | read-only |
 
 Every stage is re-runnable, so `make pipeline` after a corpus refresh does only
-the outstanding work. `drr_rag/pipeline.py` chains all four, and is what
+the outstanding work. `datahub_rag/pipeline.py` chains all four, and is what
 `docker compose up` executes.
 
 ## Schema notes
