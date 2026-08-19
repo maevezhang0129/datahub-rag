@@ -99,6 +99,10 @@ Wikipedia + OpenAlex  ──fetch──▶  frozen JSONL corpus  ──seed─�
                                   FastAPI /search
 ```
 
+- **A web UI that shows its work** — every answer ships with the trace that
+  produced it: the guard verdict, the interpretation, the measured relevance
+  against the threshold, how many candidates the per-document cap displaced,
+  and which retrieved chunks the answer actually cited
 - **Grounded chat** with a verified citation audit: every `[n]` marker is
   validated against the sources actually supplied, fabricated ones are
   stripped, and per-answer groundedness is recorded
@@ -128,10 +132,21 @@ measurement rather than the received wisdom:
 - [ADR 004 — Local embeddings by default](docs/adr/004-local-embeddings-by-default.md)
 - [ADR 005 — A calibrated relevance gate, not a prompt instruction](docs/adr/005-relevance-gate-before-answering.md)
 - [ADR 006 — Conversation memory without an LLM call](docs/adr/006-memory-without-an-llm.md)
+- [ADR 007 — Why the UI does not stream tokens](docs/adr/007-no-token-streaming.md)
 
 System overview: [docs/architecture.md](docs/architecture.md).
 
 ## Usage
+
+After `make up`, the UI is at **http://localhost:8000/ui/** and the OpenAPI docs
+at `/docs`. The left pane is the conversation; the right pane is the pipeline
+that produced the selected answer, stage by stage. Clicking a `[n]` marker jumps
+to the chunk it cites.
+
+Four buttons on the landing screen demonstrate the four behaviours worth seeing:
+a synthesis answer, an enumeration, an out-of-domain refusal (the relevance
+meter goes red and the pipeline visibly stops at the gate), and a
+regulated-advice question that triggers the guard.
 
 ```bash
 make chat          # interactive grounded chat (no API key needed)
@@ -150,7 +165,7 @@ curl -X POST localhost:8000/chat -H 'Content-Type: application/json' \
      -d '{"question":"what makes wildfires spread faster"}'
 curl localhost:8000/health
 
-make test          # 118 tests: unit + integration against the live index
+make test          # 126 cases: unit + integration against the live index
 make eval          # reproduce the retrieval results table
 make eval-chat     # chat layer: citations, guard, refusal
 make eval-weights  # RRF weight sweep
@@ -177,6 +192,7 @@ live in one table per model.
 ```
 src/datahub_rag/     chunk · embed · retrieve · api · seed · store · pipeline
   chat/            llm · interpret · guard · answer · memory · session · cli
+web/             dependency-free UI, served by the API from the same image
 db/migrations/   schema (generated tsvector column, HNSW indexes)
 eval/            gold query set, metrics, harness, frozen corpus
 docs/            architecture, evaluation, ADRs
@@ -203,7 +219,12 @@ Honest list, since a portfolio project that claims none is not credible:
 - **The relevance threshold is calibrated on the same 16 questions it is
   reported against.** The gap is wide and clean, but this is not a held-out
   evaluation.
-- **No web UI.** Chat is CLI and HTTP only.
+- **The UI does not stream.** Answers appear complete rather than
+  progressively, because the citation audit runs over the finished text —
+  see [ADR 007](docs/adr/007-no-token-streaming.md). With a hosted model that
+  wait would be seconds, not milliseconds.
+- **No asset enrichment UI.** The pipeline dashboard from the original system
+  has no analogue here yet.
 
 ## License
 

@@ -49,3 +49,20 @@ def test_notice_names_the_referral():
 
 def test_case_insensitive():
     assert guard.check("SHOULD I BUY FLOOD INSURANCE").triggered
+
+
+class TestVerdictPayload:
+    def test_notice_travels_with_the_verdict(self):
+        """Clients render the referral as a distinct element. Recovering it by
+        string-matching the tail of the answer would break the moment the
+        wording changed."""
+        verdict = guard.check("should i buy flood insurance for my house")
+        payload = verdict.as_dict()
+        assert payload["triggered"]
+        assert payload["notice"] == verdict.notice
+        assert payload["referral"] in payload["notice"]
+
+    def test_clean_question_carries_no_notice(self):
+        payload = guard.check("what is a megadrought").as_dict()
+        assert payload["notice"] == ""
+        assert payload["domains"] == []

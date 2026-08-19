@@ -5,9 +5,13 @@ help:  ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-up:  ## Build, start Postgres, run the pipeline, serve the API on :8000
+up:  ## Build, start Postgres, run the pipeline, serve the API and UI on :8000
 	$(COMPOSE) up --build -d
+	@echo "UI:  http://localhost:8000/ui/"
 	@echo "API: http://localhost:8000/docs"
+
+ui:  ## Open the web UI (the API must already be up)
+	@python3 -c "import webbrowser; webbrowser.open('http://localhost:8000/ui/')"
 
 down:  ## Stop everything (keeps the database volume)
 	$(COMPOSE) down
@@ -45,4 +49,4 @@ eval-sweep:  ## Re-chunk at 0/25/50% overlap and evaluate each
 corpus:  ## Re-fetch the frozen corpus from the public APIs
 	python scripts/fetch_corpus.py
 
-.PHONY: help up down clean logs pipeline shell test chat eval eval-chat eval-weights eval-sweep corpus
+.PHONY: help up ui down clean logs pipeline shell test chat eval eval-chat eval-weights eval-sweep corpus

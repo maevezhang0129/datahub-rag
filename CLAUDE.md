@@ -39,7 +39,7 @@ gitignored `.venv` exists only to run `scripts/fetch_corpus.py`.
 make up            # build, start postgres, run pipeline, serve API on :8000
 make down          # stop (keeps the db volume);  make clean  also drops it
 make pipeline      # re-run migrate -> seed -> chunk -> embed (idempotent)
-make test          # full suite (118 cases from 102 test functions)
+make test          # full suite (126 cases from 110 test functions)
 make chat          # interactive grounded chat CLI
 make eval          # retrieval comparison;  eval-weights / eval-sweep / eval-chat
 make shell         # psql into the database
@@ -63,6 +63,10 @@ docker compose run --rm pipeline python -m datahub_rag.chat.cli --ask "..." --js
 After editing `src/`, rebuild before running: `docker compose build -q pipeline`.
 The `api` service needs `docker compose up -d --build api`.
 
+The web UI is at `http://localhost:8000/ui/`. It is static files in `web/`
+served by the API out of the same image, so **editing `web/` still requires
+`docker compose up -d --build api`** — there is no bind mount and no dev server.
+
 `make eval-sweep` re-chunks and re-embeds three times (~10 min); avoid running
 builds concurrently with it, since embedding is CPU-bound and they compete.
 
@@ -85,6 +89,9 @@ leaked on one side would silently pass foreign documents through fusion.
 remember`. Two stages are deliberately *not* the model's job: the guardrail is
 keyword-driven and runs pre-retrieval so it cannot fail open, and the citation
 audit verifies markers rather than trusting the prompt.
+
+**Web** (`web/`) is dependency-free HTML/CSS/JS rendering `Turn.trace`. The
+trace only records decisions the pipeline already made; nothing reads it back.
 
 Cross-cutting things worth knowing before editing:
 
@@ -124,6 +131,16 @@ regression test. Do not "simplify" them away.
   quality). `MIN_RELEVANCE` (0.68) is calibrated against the measured gap in
   `eval/chat_queries.yaml` and is specific to this corpus *and* embedding model
   — changing either requires re-running `make eval-chat`.
+- **`Trace.displaced` is not `candidates - kept`.** It counts chunks a plain
+  top-k would have kept that the per-document cap pushed out, computed against
+  `candidates[:limit]`. The naive difference is dominated by the over-fetch
+  (`limit * 4`) being truncated back to `limit`, which the cap had no part in;
+  reporting it credited the cap with about three times its real effect. A
+  regression test asserts `displaced <= top_k`.
+- **The UI does not stream, and that is load-bearing** (ADR 007). The citation
+  audit runs over the finished answer and strips fabricated markers, so
+  streaming would display citations that verification then retracts. Do not add
+  token streaming without also moving marker validation.
 - **MediaWiki returns a full (non-intro) extract for only one page per request**,
   regardless of `exlimit`. `scripts/fetch_corpus.py` fetches one title at a
   time; batching silently yields one article per batch.

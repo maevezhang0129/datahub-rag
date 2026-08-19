@@ -55,6 +55,10 @@ REFUSAL = "I don't have enough information in the knowledge base to answer that.
 # claim, so it is not counted as an uncited assertion.
 _MIN_CLAIM_CHARS = 25
 
+# How much of a chunk reaches the prompt. The trace shown in the UI reuses this
+# so the panel displays the text the model actually saw, not the whole chunk.
+PROMPT_CHARS = 1200
+
 
 @dataclass
 class CitationAudit:
@@ -94,7 +98,7 @@ class GroundedAnswer:
     refused: bool = False
 
 
-def render_sources(results: Sequence[Result], max_chars: int = 1200) -> str:
+def render_sources(results: Sequence[Result], max_chars: int = PROMPT_CHARS) -> str:
     """Render chunks as a numbered list. Numbering is 1-based and positional:
     source [n] is results[n-1], which is what the audit relies on."""
     blocks = []

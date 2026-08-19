@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>datahub-rag</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>&#128269;</text></svg>">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <strong>datahub-rag</strong>
+    <span class="sub">grounded retrieval over disaster risk literature</span>
+  </div>
+  <div class="bar-right">
+    <label class="field">
+      <span>mode</span>
+      <select id="mode">
+        <option value="hybrid">hybrid (RRF)</option>
+        <option value="vector">vector</option>
+        <option value="lexical">lexical</option>
+      </select>
+    </label>
+    <div id="census" class="census">&hellip;</div>
+    <button id="reset" class="ghost" title="Start a new session">new session</button>
+  </div>
+</header>
+
+<main>
+  <!-- ---------------------------------------------------------------- -->
+  <section class="pane conversation">
+    <div id="thread" class="thread">
+      <div class="empty">
+        <h1>Ask the corpus something.</h1>
+        <p>
+          Every answer is built only from retrieved passages, and every
+          <code>[n]</code> marker is checked against the passages that were
+          actually supplied before you see it. The panel on the right shows
+          each stage that produced the answer.
+        </p>
+        <div class="examples">
+          <button data-q="how do tropical cyclones intensify over warm water">
+            <span class="tag tag-answer">answers</span>
+            how do tropical cyclones intensify over warm water
+          </button>
+          <button data-q="list the types of volcanic hazard">
+            <span class="tag tag-list">enumerates</span>
+            list the types of volcanic hazard
+          </button>
+          <button data-q="how do i configure a kubernetes ingress controller">
+            <span class="tag tag-refuse">refuses</span>
+            how do i configure a kubernetes ingress controller
+          </button>
+          <button data-q="should i buy flood insurance for my house">
+            <span class="tag tag-guard">guards</span>
+            should i buy flood insurance for my house
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <form id="composer" class="composer">
+      <input id="question" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Ask a question&hellip;" required minlength="2">
+      <button id="send" type="submit">Ask</button>
+    </form>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <aside class="pane inspector" id="inspector">
+    <div class="inspector-head">
+      <h2>How this answer was made</h2>
+      <span id="took" class="took"></span>
+    </div>
+    <div id="trace" class="trace">
+      <p class="hint">Ask something and the pipeline appears here.</p>
+    </div>
+  </aside>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

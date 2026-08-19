@@ -58,6 +58,47 @@ def diversify(results: List[Result], limit: int,
 
 
 @dataclass
+class Trace:
+    """How a turn was produced, stage by stage.
+
+    Every field here is a decision the pipeline already made; the trace only
+    records it. It exists because the interesting part of a RAG answer is not
+    the prose but the path -- which query was actually searched, how close the
+    corpus came to the relevance threshold, how many candidates the
+    per-document cap discarded. The web UI renders this; nothing depends on it.
+    """
+
+    mode: str = "hybrid"
+    query: str = ""
+    relevance: float = 0.0
+    threshold: float = config.MIN_RELEVANCE
+    gate_passed: bool = False
+    top_k: int = 0
+    candidates: int = 0
+    kept: int = 0
+    documents: int = 0
+    # Chunks a plain top-k would have included that the per-document cap
+    # displaced. This is the cap's actual effect. It is NOT `candidates - kept`:
+    # that difference is mostly the over-fetch being truncated back to top_k,
+    # which the cap had nothing to do with.
+    displaced: int = 0
+
+    def as_dict(self) -> dict:
+        return {
+            "mode": self.mode,
+            "query": self.query,
+            "relevance": round(self.relevance, 4),
+            "threshold": round(self.threshold, 4),
+            "gate_passed": self.gate_passed,
+            "top_k": self.top_k,
+            "candidates": self.candidates,
+            "kept": self.kept,
+            "documents": self.documents,
+            "displaced": self.displaced,
+        }
+
+
+@dataclass
 class Turn:
     question: str
     answer: str
@@ -65,10 +106,22 @@ class Turn:
     interpretation: Optional[interpret.Interpretation] = None
     guard_verdict: Optional[guard.GuardVerdict] = None
     audit: Optional[answer_stage.CitationAudit] = None
+    trace: Trace = field(default_factory=Trace)
     refused: bool = False
     message_id: Optional[int] = None
 
+    @property
+    def cited_ordinals(self) -> set:
+        """1-based positions in `sources` that the audited answer cites.
+
+        One definition, used by both the persisted audit trail and the API
+        payload -- if these two ever disagreed, the stored `was_cited` column
+        would stop matching what the UI shows for the same answer.
+        """
+        return self.audit.cited_sources if self.audit else set()
+
     def as_dict(self) -> dict:
+        cited = self.cited_ordinals
         return {
             "question": self.question,
             "answer": self.answer,
@@ -76,8 +129,21 @@ class Turn:
             "interpretation": self.interpretation.as_dict() if self.interpretation else {},
             "guard": self.guard_verdict.as_dict() if self.guard_verdict else {},
             "citations": self.audit.as_dict() if self.audit else {},
+            "trace": self.trace.as_dict(),
             "sources": [
-                {"n": i, "title": s.title, "url": s.url, "score": round(s.score, 4)}
+                {
+                    "n": i,
+                    "chunk_id": s.chunk_id,
+                    "document_id": s.document_id,
+                    "title": s.title,
+                    "url": s.url,
+                    "published_at": s.published_at,
+                    "score": round(s.score, 4),
+                    "cited": i in cited,
+                    # Truncated to what the prompt carried, so the panel shows
+                    # the evidence the model saw rather than the whole chunk.
+                    "text": s.text[:answer_stage.PROMPT_CHARS],
+                }
                 for i, s in enumerate(self.sources, start=1)
             ],
         }
@@ -145,6 +211,7 @@ class ChatSession:
                 "citations": turn.audit.as_dict() if turn.audit else {},
                 "refused": turn.refused,
                 "retrieval_mode": self.mode,
+                "trace": turn.trace.as_dict(),
             }
             row = conn.execute(
                 "INSERT INTO chat_messages (session_id, role, content, meta) "
@@ -153,7 +220,7 @@ class ChatSession:
             ).fetchone()
             message_id = row["id"]
 
-            cited = turn.audit.cited_sources if turn.audit else set()
+            cited = turn.cited_ordinals
             with conn.cursor() as cur:
                 cur.executemany(
                     """INSERT INTO chat_context_chunks
@@ -185,6 +252,8 @@ class ChatSession:
         # and dutifully writes a cited answer from it. Checked before
         # generation, so an out-of-scope question costs no answer tokens.
         relevance = retrieve.top_similarity(query)
+        trace = Trace(mode=self.mode, query=query, relevance=relevance,
+                      threshold=config.MIN_RELEVANCE)
         if relevance < config.MIN_RELEVANCE:
             turn = Turn(
                 question=question,
@@ -192,6 +261,7 @@ class ChatSession:
                 interpretation=plan,
                 guard_verdict=verdict,
                 audit=answer_stage.CitationAudit(),
+                trace=trace,
                 refused=True,
             )
             self.memory.observe(question, plan.is_followup, plan.entities)
@@ -204,6 +274,15 @@ class ChatSession:
         # exactly `limit` would leave the context short.
         candidates = retrieve.search(query, mode=self.mode, top_k=limit * 4)
         results = diversify(candidates, limit, MAX_CHUNKS_PER_DOCUMENT)
+
+        trace.gate_passed = True
+        trace.top_k = limit
+        trace.candidates = len(candidates)
+        trace.kept = len(results)
+        trace.documents = len({r.document_id for r in results})
+        trace.displaced = len(
+            {r.chunk_id for r in candidates[:limit]} - {r.chunk_id for r in results}
+        )
 
         grounded = answer_stage.generate(
             question, results,
@@ -220,6 +299,7 @@ class ChatSession:
             interpretation=plan,
             guard_verdict=verdict,
             audit=grounded.audit,
+            trace=trace,
             refused=grounded.refused,
         )
 

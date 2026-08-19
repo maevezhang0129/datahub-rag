@@ -117,5 +117,42 @@ The `stub` LLM backend is a first-class implementation, not a test double. It
 makes interpretation and memory fully deterministic, so the entire
 conversational chain runs, demos and unit-tests with no API key.
 
+## Web layer
+
+```
+web/  (static, no build step)          served at /ui by the same FastAPI app
+┌───────────────────────────┐  ┌────────────────────────────────────────────┐
+│ conversation              │  │ inspector — the `trace` for one turn       │
+│                           │  │                                            │
+│  question                 │  │  1 guard      verdict + domains            │
+│  answer with [n] chips ───┼─▶│  2 interpret  mode, terms, rewritten query │
+│  guard notice (separate)  │  │  3 gate       cosine ──┬── MIN_RELEVANCE   │
+│                           │  │  4 retrieve   over-fetch → kept → docs     │
+│  mode · sources · cited   │  │  5 audit      groundedness, stripped [n]   │
+│  · latency                │  │  ─────────────────────────────────────────│
+│                           │  │  context      each chunk, score, cited?    │
+└───────────────────────────┘  └────────────────────────────────────────────┘
+```
+
+`Turn.trace` is a record of decisions the pipeline had already made; nothing
+depends on it. Two of its fields are worth naming because a plausible-looking
+version of each would be wrong:
+
+- **`relevance` vs `threshold`** is the gate rendered as a meter. On a refusal
+  the pipeline visibly stops at stage 3, which is the whole of ADR 005 in one
+  screen.
+- **`displaced`** is how many chunks a plain top-k would have kept that the
+  per-document cap pushed out. It is deliberately *not* `candidates - kept`:
+  that difference is dominated by the over-fetch being truncated back to
+  `top_k`, which the cap had nothing to do with, and reporting it would credit
+  the cap with roughly three times its actual effect.
+
+The guard notice travels on the verdict rather than only appended to the answer
+text, so the UI can render it as a system element instead of recovering it by
+string-matching the answer's tail.
+
+The UI does not stream; see [ADR 007](adr/007-no-token-streaming.md) for why
+that follows from the audit being post-hoc rather than being a missing feature.
+
 See [`evaluation.md`](evaluation.md) for measured behaviour and
 [`adr/`](adr/) for the reasoning behind the main choices.

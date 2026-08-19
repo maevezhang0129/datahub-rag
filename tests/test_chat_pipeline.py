@@ -160,6 +160,65 @@ class TestRelevanceGate:
         assert in_domain > out_of_domain + 0.1
 
 
+class TestTrace:
+    """The trace is what the web UI renders. It has to describe what actually
+    happened, not a plausible-looking summary of it."""
+
+    def test_answered_turn_reports_every_stage(self, seeded):
+        turn = ChatSession(llm=StubLLM(), persist=False).ask(
+            "how do tropical cyclones intensify over warm water")
+        t = turn.trace
+        assert t.gate_passed
+        assert t.relevance >= t.threshold
+        assert t.kept == len(turn.sources)
+        assert t.documents == len({s.document_id for s in turn.sources})
+        assert t.candidates >= t.kept
+
+    def test_refused_turn_stops_the_trace_at_the_gate(self, seeded):
+        turn = ChatSession(llm=StubLLM(), persist=False).ask(
+            "how do i configure a kubernetes ingress controller")
+        t = turn.trace
+        assert not t.gate_passed
+        assert t.relevance < t.threshold
+        # Nothing was retrieved, so the retrieval fields must stay at zero
+        # rather than reporting numbers from a search that never ran.
+        assert (t.candidates, t.kept, t.documents, t.displaced) == (0, 0, 0, 0)
+
+    def test_displaced_measures_the_cap_not_the_over_fetch(self, seeded):
+        """`displaced` is the cap's effect: chunks a plain top-k would have
+        kept. It is NOT `candidates - kept`, which is dominated by the
+        over-fetch being truncated back to top_k and would wildly overstate
+        how much the cap did."""
+        t = ChatSession(llm=StubLLM(), persist=False).ask(
+            "how do tropical cyclones intensify over warm water").trace
+        assert t.candidates > t.top_k, "expected the over-fetch to be in play"
+        assert t.displaced <= t.top_k
+
+    def test_trace_records_the_query_that_was_searched(self, seeded):
+        session = ChatSession(llm=StubLLM(), persist=False)
+        session.ask("what causes flash droughts")
+        turn = session.ask("tell me more about that")
+        # A follow-up is rewritten before retrieval; the trace shows the
+        # rewritten form, which is the only way to tell the merge worked.
+        assert turn.trace.query != turn.question
+
+
+class TestTracePayload:
+    def test_cited_flags_agree_with_the_audit(self, seeded):
+        turn = ChatSession(llm=StubLLM(), persist=False).ask(
+            "what causes flash droughts")
+        payload = turn.as_dict()
+        flagged = {s["n"] for s in payload["sources"] if s["cited"]}
+        assert flagged == set(payload["citations"]["cited_sources"])
+
+    def test_source_text_is_truncated_to_what_the_prompt_carried(self, seeded):
+        from datahub_rag.chat import answer as answer_stage
+        turn = ChatSession(llm=StubLLM(), persist=False).ask(
+            "how do tropical cyclones intensify over warm water")
+        for source in turn.as_dict()["sources"]:
+            assert len(source["text"]) <= answer_stage.PROMPT_CHARS
+
+
 class TestPersistence:
     def test_turn_and_audit_trail_are_written(self, seeded):
         session = ChatSession(llm=StubLLM(), persist=True)

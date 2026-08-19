@@ -71,7 +71,15 @@ class GuardVerdict:
         )
 
     def as_dict(self) -> dict:
-        return {"triggered": self.triggered, "domains": self.domains}
+        # The notice travels with the verdict so a client can render it as a
+        # distinct element instead of recovering it by string-matching the tail
+        # of the answer it was appended to.
+        return {
+            "triggered": self.triggered,
+            "domains": self.domains,
+            "referral": self.referral,
+            "notice": self.notice,
+        }
 
 
 def check(question: str) -> GuardVerdict:

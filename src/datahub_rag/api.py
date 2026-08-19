@@ -5,9 +5,12 @@ from __future__ import annotations
 import logging
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import config, embed, retrieve, store
@@ -143,6 +146,7 @@ class ChatResponse(BaseModel):
     interpretation: dict
     guard: dict
     citations: dict
+    trace: dict
     sources: List[dict]
 
 
@@ -170,6 +174,22 @@ def chat(request: ChatRequest) -> ChatResponse:
     )
 
 
+@app.get("/chat/{session_id}/context/{message_id}")
+def chat_context(session_id: int, message_id: int) -> dict:
+    """The chunks shown to the model for one past answer.
+
+    Read from `chat_context_chunks`, not by re-running retrieval: the point of
+    the audit trail is that it records what was actually shown, which re-running
+    would not reproduce after a re-chunk.
+    """
+    try:
+        session = ChatSession(session_id=session_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"session_id": session_id, "message_id": message_id,
+            "chunks": [dict(row) for row in session.context_for(message_id)]}
+
+
 @app.get("/chat/{session_id}/history")
 def chat_history(session_id: int) -> dict:
     try:
@@ -185,3 +205,18 @@ def chat_history(session_id: int) -> dict:
             for m in session.history()
         ],
     }
+
+
+# --------------------------------------------------------------------------
+# Web UI
+# --------------------------------------------------------------------------
+# Mounted under /ui rather than / so it can never shadow an API route, and
+# served straight from the image: the UI is dependency-free static files, which
+# keeps `docker compose up` the only thing a reader has to run.
+_WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+if _WEB_DIR.is_dir():
+    app.mount("/ui", StaticFiles(directory=_WEB_DIR, html=True), name="ui")
+
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        return RedirectResponse(url="/ui/")
