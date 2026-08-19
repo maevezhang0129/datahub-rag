@@ -154,5 +154,38 @@ string-matching the answer's tail.
 The UI does not stream; see [ADR 007](adr/007-no-token-streaming.md) for why
 that follows from the audit being post-hoc rather than being a missing feature.
 
+## Operational views
+
+`stats.py` holds read-only aggregates over the same tables the pipeline writes,
+served at `/stats/corpus`, `/stats/index` and `/stats/calibration` and rendered
+at `/ui/dashboard.html`. Nothing is cached or precomputed, so no panel can show
+a stale picture.
+
+| Panel | Question it answers |
+|---|---|
+| corpus | how the two halves of the corpus differ in chunk granularity |
+| index state | is every chunk embedded for each model, and is chunking current |
+| relevance gate calibration | does `MIN_RELEVANCE` still sit in the gap ADR 005 measured |
+
+Three properties are deliberate:
+
+- **An unindexed model and an empty index are different states.** A model whose
+  table does not exist reports `indexed: false`, not a coverage of 0.0.
+  Collapsing them would make "you have not built this index" look identical to
+  "this index is broken".
+- **Staleness is derived, not tracked.** `chunks.source_hash` records the
+  document `content_hash` the chunk was cut from, so a document revised without
+  a re-chunk is detectable by a join rather than by a flag someone has to
+  remember to set. That is what makes the idempotent pipeline *verifiable*
+  rather than merely asserted.
+- **Calibration reads persisted turns and reports empty when there are none.**
+  An empty calibration and a broken one must not look alike, so the panel says
+  "no data, run `make traffic`" rather than drawing a plausible zero.
+
+The calibration panel is a calibration check, not a usage report: by default it
+is measuring the same evaluation questions the threshold was fitted on. It
+shows the threshold still sits in the gap; it does not show that the gap
+generalises.
+
 See [`evaluation.md`](evaluation.md) for measured behaviour and
 [`adr/`](adr/) for the reasoning behind the main choices.

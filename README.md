@@ -103,6 +103,11 @@ Wikipedia + OpenAlex  ──fetch──▶  frozen JSONL corpus  ──seed─�
   produced it: the guard verdict, the interpretation, the measured relevance
   against the threshold, how many candidates the per-document cap displaced,
   and which retrieved chunks the answer actually cited
+- **An operational dashboard** over corpus, index and gate calibration —
+  embedding coverage per model, detection of documents revised without a
+  re-chunk, and the distribution of measured relevance against
+  `MIN_RELEVANCE`, which is how you tell whether the threshold is still
+  calibrated rather than merely still configured
 - **Grounded chat** with a verified citation audit: every `[n]` marker is
   validated against the sources actually supplied, fabricated ones are
   stripped, and per-answer groundedness is recorded
@@ -138,10 +143,10 @@ System overview: [docs/architecture.md](docs/architecture.md).
 
 ## Usage
 
-After `make up`, the UI is at **http://localhost:8000/ui/** and the OpenAPI docs
-at `/docs`. The left pane is the conversation; the right pane is the pipeline
-that produced the selected answer, stage by stage. Clicking a `[n]` marker jumps
-to the chunk it cites.
+After `make up`, the UI is at **http://localhost:8000/ui/**, the dashboard at
+**/ui/dashboard.html**, and the OpenAPI docs at `/docs`. The left pane is the
+conversation; the right pane is the pipeline that produced the selected answer,
+stage by stage. Clicking a `[n]` marker jumps to the chunk it cites.
 
 Four buttons on the landing screen demonstrate the four behaviours worth seeing:
 a synthesis answer, an enumeration, an out-of-domain refusal (the relevance
@@ -165,7 +170,8 @@ curl -X POST localhost:8000/chat -H 'Content-Type: application/json' \
      -d '{"question":"what makes wildfires spread faster"}'
 curl localhost:8000/health
 
-make test          # 126 cases: unit + integration against the live index
+make traffic       # replay the eval questions so the dashboard has data
+make test          # 138 cases: unit + integration against the live index
 make eval          # reproduce the retrieval results table
 make eval-chat     # chat layer: citations, guard, refusal
 make eval-weights  # RRF weight sweep
@@ -192,7 +198,7 @@ live in one table per model.
 ```
 src/datahub_rag/     chunk · embed · retrieve · api · seed · store · pipeline
   chat/            llm · interpret · guard · answer · memory · session · cli
-web/             dependency-free UI, served by the API from the same image
+web/             dependency-free UI + dashboard, served by the API from the same image
 db/migrations/   schema (generated tsvector column, HNSW indexes)
 eval/            gold query set, metrics, harness, frozen corpus
 docs/            architecture, evaluation, ADRs
@@ -223,8 +229,11 @@ Honest list, since a portfolio project that claims none is not credible:
   progressively, because the citation audit runs over the finished text —
   see [ADR 007](docs/adr/007-no-token-streaming.md). With a hosted model that
   wait would be seconds, not milliseconds.
-- **No asset enrichment UI.** The pipeline dashboard from the original system
-  has no analogue here yet.
+- **The dashboard's calibration panel is not a usage report.** It reads
+  whatever turns have been persisted, which by default means the 16 evaluation
+  questions replayed by `make traffic` — the same questions `MIN_RELEVANCE`
+  was calibrated on. It shows the threshold still sits in the gap; it does not
+  show that it generalises.
 
 ## License
 

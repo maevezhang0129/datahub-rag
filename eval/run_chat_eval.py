@@ -40,11 +40,12 @@ def load() -> dict:
     return yaml.safe_load((EVAL_DIR / "chat_queries.yaml").read_text())
 
 
-def eval_answers(questions: List[str], llm, expect_refusal: bool) -> dict:
+def eval_answers(questions: List[str], llm, expect_refusal: bool,
+                 persist: bool = False) -> dict:
     groundedness, diversity, refusals, fabricated, chunk_counts = [], [], 0, 0, []
 
     for question in questions:
-        turn = ChatSession(llm=llm, persist=False).ask(question)
+        turn = ChatSession(llm=llm, persist=persist).ask(question)
         groundedness.append(turn.audit.groundedness)
         diversity.append(len({s.document_id for s in turn.sources}))
         chunk_counts.append(len(turn.sources))
@@ -128,18 +129,29 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--backend", default=None)
+    ap.add_argument(
+        "--persist", action="store_true",
+        help="also write these turns to the database, so the dashboard has "
+             "data to calibrate against. Does not change what is measured.",
+    )
     args = ap.parse_args()
 
     llm = get_llm(args.backend)
     data = load()
     census = store.corpus_stats()
     print(f"corpus: {census['documents']} documents, {census['chunks']} chunks")
-    print(f"backend: {llm.name}\n")
+    print(f"backend: {llm.name}")
+    if args.persist:
+        print("persisting turns: the dashboard reads these\n")
+    else:
+        print()
 
     results = {
         "backend": llm.name,
-        "in_domain": eval_answers(data["in_domain"], llm, expect_refusal=False),
-        "out_of_domain": eval_answers(data["out_of_domain"], llm, expect_refusal=True),
+        "in_domain": eval_answers(data["in_domain"], llm, expect_refusal=False,
+                                  persist=args.persist),
+        "out_of_domain": eval_answers(data["out_of_domain"], llm, expect_refusal=True,
+                                      persist=args.persist),
         "guard": eval_guard(data["guarded"], data["benign"]),
     }
 

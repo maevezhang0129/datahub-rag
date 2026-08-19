@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, embed, retrieve, store
+from . import config, embed, retrieve, stats, store
 from .chat.llm import get_llm
 from .chat.session import ChatSession
 
@@ -123,8 +123,32 @@ def search(
 
 
 @app.get("/stats")
-def stats() -> dict:
+def stats_summary() -> dict:
     return store.corpus_stats()
+
+
+@app.get("/stats/corpus")
+def stats_corpus() -> dict:
+    """Per-source census and the chunk-size distribution."""
+    return {"health": stats.corpus_health(),
+            "sizes": stats.chunk_size_histogram()}
+
+
+@app.get("/stats/index")
+def stats_index() -> dict:
+    """Embedding coverage per model, and whether chunking is up to date."""
+    return {"coverage": stats.index_coverage(), "staleness": stats.staleness()}
+
+
+@app.get("/stats/calibration")
+def stats_calibration() -> dict:
+    """Measured relevance against MIN_RELEVANCE, over persisted turns.
+
+    Empty until something has been asked and persisted; `make traffic` replays
+    the evaluation questions to populate it.
+    """
+    return {"calibration": stats.relevance_calibration(),
+            "quality": stats.answer_quality()}
 
 
 # --------------------------------------------------------------------------

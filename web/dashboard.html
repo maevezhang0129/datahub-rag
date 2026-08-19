@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>datahub-rag · dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>&#128269;</text></svg>">
+</head>
+<body class="page-dashboard">
+<header class="bar">
+  <div class="brand">
+    <strong>datahub-rag</strong>
+    <span class="sub">corpus, index and gate calibration</span>
+  </div>
+  <div class="bar-right">
+    <div id="census" class="census">&hellip;</div>
+    <a class="ghost" href="/ui/">&larr; chat</a>
+  </div>
+</header>
+
+<main class="board">
+  <!-- ------------------------------------------------------------------ -->
+  <section class="card">
+    <h2>Corpus</h2>
+    <p class="card-note" id="corpus-note"></p>
+    <div id="corpus-table"></div>
+  </section>
+
+  <section class="card">
+    <h2>Chunk size</h2>
+    <p class="card-note">
+      Token counts per chunk, bucketed. The target is
+      <b id="target-tokens">&mdash;</b> tokens; a source that never reaches it
+      is producing one short chunk per document rather than a split.
+    </p>
+    <div id="sizes"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ -->
+  <section class="card">
+    <h2>Index state</h2>
+    <p class="card-note">
+      Embeddings live in one table per model, so several can be indexed side by
+      side. Every chunk also records the document <code>content_hash</code> it
+      was cut from, so a revised document that has not been re-chunked is
+      detectable rather than merely unlikely.
+    </p>
+    <div id="coverage"></div>
+    <div id="staleness"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ -->
+  <section class="card wide">
+    <h2>Relevance gate calibration</h2>
+    <p class="card-note">
+      <code>MIN_RELEVANCE</code> was set from the gap between answerable and
+      unanswerable questions on this corpus (<a href="https://github.com/maevezhang0129/datahub-rag/blob/main/docs/adr/005-relevance-gate-before-answering.md">ADR 005</a>).
+      That calibration holds only while the gap does — changing the corpus or
+      the embedding model can move it. This is the view that shows whether it
+      has.
+    </p>
+    <div id="calibration"></div>
+  </section>
+</main>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

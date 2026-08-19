@@ -37,6 +37,9 @@ eval:  ## Run the retrieval evaluation and write eval/results/
 eval-chat:  ## Evaluate the chat layer (citations, guard, refusal)
 	$(COMPOSE) run --rm pipeline python -m eval.run_chat_eval
 
+traffic:  ## Replay the eval questions into the db so /ui/dashboard has data
+	$(COMPOSE) run --rm pipeline python -m eval.run_chat_eval --persist
+
 chat:  ## Interactive chat CLI
 	$(COMPOSE) run --rm pipeline python -m datahub_rag.chat.cli
 
@@ -49,4 +52,4 @@ eval-sweep:  ## Re-chunk at 0/25/50% overlap and evaluate each
 corpus:  ## Re-fetch the frozen corpus from the public APIs
 	python scripts/fetch_corpus.py
 
-.PHONY: help up ui down clean logs pipeline shell test chat eval eval-chat eval-weights eval-sweep corpus
+.PHONY: help up ui down clean logs pipeline shell test chat traffic eval eval-chat eval-weights eval-sweep corpus

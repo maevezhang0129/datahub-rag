@@ -448,3 +448,217 @@ main {
   .inspector { border-top: 1px solid var(--border); max-height: 45vh; }
   .brand .sub { display: none; }
 }
+
+/* ======================================================================
+   Dashboard
+   ====================================================================== */
+
+.page-dashboard { display: block; background: var(--bg); }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 16px;
+  padding: 22px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.board .wide { grid-column: 1 / -1; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px 18px;
+}
+
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.card-note { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.card-note code { font-family: var(--mono); font-size: 12px; }
+.card-note a { color: var(--accent); }
+.card-note b { color: var(--ink); }
+
+.bar-right a.ghost { text-decoration: none; }
+
+/* tables */
+
+/* Tables scroll inside their card rather than widening it: nowrap keeps the
+   numeric columns readable, and a card must never push the page sideways. */
+.table-wrap { overflow-x: auto; }
+
+.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.grid th {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.grid th:first-child, .grid td:first-child { text-align: left; padding-left: 0; }
+.grid th, .grid td { padding-left: 12px; white-space: nowrap; }
+.grid td { text-align: right; padding-top: 7px; padding-bottom: 7px; font-family: var(--mono); font-size: 12.5px; }
+
+.grid tbody tr + tr td { border-top: 1px solid var(--border); }
+.grid td.k { font-family: var(--sans); font-size: 13px; font-weight: 550; }
+.grid td.dim, .grid .dim { color: var(--muted); }
+.grid .row-off td { opacity: 0.55; }
+.grid.compact td { padding: 5px 0; }
+
+.bad-text { color: var(--bad); }
+
+.meter-inline {
+  display: inline-block;
+  width: 42px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.meter-inline > span { display: block; height: 100%; background: var(--ok); }
+
+/* horizontal bars (chunk size) */
+
+.bars { display: flex; flex-direction: column; gap: 3px; }
+
+.bar-row { display: flex; align-items: center; gap: 9px; }
+
+.bar-label {
+  flex: none;
+  width: 68px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bar-stack { flex: 1; display: flex; height: 13px; border-radius: 3px; overflow: hidden; }
+
+/* Named `.seg`, not `.bar`: `.bar` is the page header, and reusing it here
+   turned the header into a full-height block. */
+.seg { display: block; height: 100%; min-width: 1px; }
+
+.bar-value {
+  flex: none;
+  width: 42px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.seg-0 { background: var(--accent); }
+.seg-1 { background: var(--warn); }
+.seg-2 { background: var(--muted); }
+
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.key { display: inline-flex; align-items: center; gap: 5px; }
+
+.swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.swatch.answered { background: var(--ok); }
+.swatch.refused  { background: var(--bad); }
+
+/* checks */
+
+.stack-top { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+.checks { list-style: none; margin: 0; padding: 0; }
+
+.checks li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 13px;
+}
+
+.checks li + li { border-top: 1px solid var(--border); }
+.checks li b { font-family: var(--mono); font-size: 12.5px; }
+.checks li.on b  { color: var(--ok); }
+.checks li.off b { color: var(--bad); }
+
+/* histogram */
+
+.hist { margin-bottom: 4px; }
+
+.hist-plot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 160px;
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.hcol {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 1px;
+}
+
+.hbar { display: block; width: 50%; min-height: 0; border-radius: 2px 2px 0 0; }
+.hbar.answered { background: var(--ok); }
+.hbar.refused  { background: var(--bad); }
+
+.hist-threshold {
+  position: absolute;
+  top: -6px;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink);
+}
+
+.hist-threshold span {
+  position: absolute;
+  top: -4px;
+  left: 6px;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink);
+  background: var(--panel);
+  padding: 0 3px;
+}
+
+.hist-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+@media (max-width: 560px) {
+  .board { grid-template-columns: 1fr; padding: 14px; }
+}

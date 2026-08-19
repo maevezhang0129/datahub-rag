@@ -39,9 +39,10 @@ gitignored `.venv` exists only to run `scripts/fetch_corpus.py`.
 make up            # build, start postgres, run pipeline, serve API on :8000
 make down          # stop (keeps the db volume);  make clean  also drops it
 make pipeline      # re-run migrate -> seed -> chunk -> embed (idempotent)
-make test          # full suite (126 cases from 110 test functions)
+make test          # full suite (138 cases from 122 test functions)
 make chat          # interactive grounded chat CLI
 make eval          # retrieval comparison;  eval-weights / eval-sweep / eval-chat
+make traffic       # replay the eval questions, persisted, to feed the dashboard
 make shell         # psql into the database
 ```
 
@@ -63,8 +64,9 @@ docker compose run --rm pipeline python -m datahub_rag.chat.cli --ask "..." --js
 After editing `src/`, rebuild before running: `docker compose build -q pipeline`.
 The `api` service needs `docker compose up -d --build api`.
 
-The web UI is at `http://localhost:8000/ui/`. It is static files in `web/`
-served by the API out of the same image, so **editing `web/` still requires
+The web UI is at `http://localhost:8000/ui/` and the dashboard at
+`/ui/dashboard.html`. Both are static files in `web/` served by the API out of
+the same image, so **editing `web/` still requires
 `docker compose up -d --build api`** — there is no bind mount and no dev server.
 
 `make eval-sweep` re-chunks and re-embeds three times (~10 min); avoid running
@@ -92,6 +94,11 @@ audit verifies markers rather than trusting the prompt.
 
 **Web** (`web/`) is dependency-free HTML/CSS/JS rendering `Turn.trace`. The
 trace only records decisions the pipeline already made; nothing reads it back.
+
+**Stats** (`stats.py`) holds the read-only aggregates behind the dashboard,
+exposed at `/stats/corpus`, `/stats/index` and `/stats/calibration`. Nothing is
+cached, so no view can go stale. The calibration view reads persisted turns
+only — `make traffic` produces them.
 
 Cross-cutting things worth knowing before editing:
 
@@ -137,6 +144,13 @@ regression test. Do not "simplify" them away.
   (`limit * 4`) being truncated back to `limit`, which the cap had no part in;
   reporting it credited the cap with about three times its real effect. A
   regression test asserts `displaced <= top_k`.
+- **An unindexed model and an empty index must not render alike.**
+  `stats.index_coverage()` reports `indexed: false` when the per-model table
+  does not exist at all, separately from a coverage of 0.0. Collapsing them
+  would make "you have not built this index" look like "this index is broken".
+- **The dashboard's calibration panel reads persisted turns, never re-runs
+  retrieval.** With no traffic it reports empty rather than zero: an empty
+  calibration and a broken one must not look alike.
 - **The UI does not stream, and that is load-bearing** (ADR 007). The citation
   audit runs over the finished answer and strips fabricated markers, so
   streaming would display citations that verification then retracts. Do not add
