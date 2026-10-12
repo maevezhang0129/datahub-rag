@@ -18,12 +18,12 @@ open http://localhost:8000/docs
 
 ## Provenance
 
-I worked as part of a team on a production RAG pipeline for the **UNDRR Datum
-platform** (UN Office for Disaster Risk Reduction), a system indexing hundreds
-of thousands of disaster risk documents into roughly 2.7 million embedded
-chunks. My contributions there were the enrichment pipeline monitoring
-dashboard, the pipeline documentation set, and code review of the chunking and
-embedding stages.
+As part of the team behind a production RAG system for the **UNDRR Datum platform**
+(UN Office for Disaster Risk Reduction), I built the ingestion and retrieval layers:
+extracting mixed-format documents into PostgreSQL, token-aware chunking and embedding
+into pgvector, and hybrid dense + keyword retrieval fused with reciprocal rank fusion,
+at roughly 2.7 million embedded chunks in production. I also built the enrichment
+pipeline monitoring dashboard and wrote the pipeline documentation.
 
 That codebase is private and owned by UNDRR. **No part of it appears here.**
 This repository is an independent reimplementation of the architecture, on
