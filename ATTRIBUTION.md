@@ -23,6 +23,9 @@ chunks and served hybrid retrieval to downstream applications.
 
 **My contributions to that project were:**
 
+- Built the ingestion and retrieval layers: extracting mixed-format documents
+  into PostgreSQL, token-aware chunking and embedding into pgvector, and
+  hybrid dense + keyword retrieval fused with reciprocal rank fusion
 - Built the enrichment pipeline monitoring dashboard (Streamlit over
   PostgreSQL) used to track chunking, embedding, and per-collection
   enrichment status
@@ -48,14 +51,15 @@ documented information retrieval methods, not anyone's proprietary work.
 ## Why I built it
 
 I wanted a portfolio artifact I could publish honestly and discuss in full
-technical depth. Rebuilding the architecture alone, on public data, with an
-evaluation harness the original never had, seemed a better demonstration of
-what I understand than any codebase I could point at but not fully claim.
+technical depth. Rebuilding the architecture alone, on public data, with a
+reproducible evaluation harness anyone can rerun, seemed a better demonstration
+of what I understand than any codebase I could point at but not fully show.
 
 ## Data
 
-Documents in `eval/corpus/` are retrieved from the ReliefWeb API and remain
-the property of their original publishers. ReliefWeb is a service of the UN
-Office for the Coordination of Humanitarian Affairs (OCHA). This project is
-not affiliated with, endorsed by, or representing UNDRR, OCHA, or the
-United Nations.
+Documents in `eval/corpus/` are retrieved from Wikipedia and OpenAlex and
+remain the property of their original publishers: Wikipedia content is
+CC BY-SA 4.0, OpenAlex metadata is CC0. (ReliefWeb was evaluated and not used:
+its API requires a registered app name, which would break the clone-and-run
+property.) This project is not affiliated with, endorsed by, or representing
+UNDRR, OCHA, or the United Nations.
