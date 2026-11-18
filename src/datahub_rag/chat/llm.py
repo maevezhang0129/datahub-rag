@@ -209,7 +209,9 @@ def _first_sentence(text: str) -> str:
     candidate that starts like a real sentence is used instead.
     """
     cleaned = " ".join(text.split())
-    candidates = re.findall(r"[^.!?]*[.!?]", cleaned)
+    # Punctuation ends a sentence only before whitespace or the end of the text,
+    # so the point in "25.5 °C" does not cut the quote short.
+    candidates = re.findall(r".+?[.!?](?=\s|$)", cleaned)
     for candidate in candidates:
         candidate = candidate.strip()
         if len(candidate) >= 40 and candidate[:1].isupper():

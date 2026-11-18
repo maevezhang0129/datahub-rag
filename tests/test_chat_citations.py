@@ -5,6 +5,7 @@ import pytest
 from datahub_rag.chat.answer import (
     audit_citations, normalise_citations, render_sources, split_sentences,
 )
+from datahub_rag.chat.llm import TASK_ANSWER, StubLLM
 
 
 class FakeResult:
@@ -101,3 +102,34 @@ class TestSplitSentences:
 
     def test_blank_lines_ignored(self):
         assert split_sentences("\n\nOnly one.\n\n") == ["Only one."]
+
+
+class TestStubAnswerQuoting:
+    """The stub answers by quoting a source, so the quote must stay faithful."""
+
+    @pytest.mark.parametrize("body, expected", [
+        pytest.param(
+            # Regression: a source saying 25.5 °C was quoted back as "25".
+            "Studies have proposed a lower minimum of 25.5 °C for formation. Warm seas help.",
+            "Studies have proposed a lower minimum of 25.5 °C for formation [1].",
+            id="decimal-late-in-sentence",
+        ),
+        pytest.param(
+            "Sea levels rose by 1.5 metres and then by 2.5 metres in the region.",
+            "Sea levels rose by 1.5 metres and then by 2.5 metres in the region [1].",
+            id="decimal-early-in-sentence",
+        ),
+        pytest.param(
+            "Drought reduces crop yields across the affected region. Soil moisture falls too.",
+            "Drought reduces crop yields across the affected region [1].",
+            id="stops-at-first-sentence",
+        ),
+        pytest.param(
+            "scarcity. Drought reduces crop yields across the affected region.",
+            "Drought reduces crop yields across the affected region [1].",
+            id="skips-leading-fragment",
+        ),
+    ])
+    def test_quotes_the_whole_first_sentence(self, body, expected):
+        prompt = "Sources:\n" + render_sources([FakeResult("Source", body)])
+        assert StubLLM().complete("", prompt, task=TASK_ANSWER) == expected

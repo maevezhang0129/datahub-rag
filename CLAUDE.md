@@ -39,7 +39,7 @@ gitignored `.venv` exists only to run `scripts/fetch_corpus.py`.
 make up            # build, start postgres, run pipeline, serve API on :8000
 make down          # stop (keeps the db volume);  make clean  also drops it
 make pipeline      # re-run migrate -> seed -> chunk -> embed (idempotent)
-make test          # full suite (138 cases from 122 test functions)
+make test          # full suite (142 cases from 123 test functions)
 make chat          # interactive grounded chat CLI
 make eval          # retrieval comparison;  eval-weights / eval-sweep / eval-chat
 make traffic       # replay the eval questions, persisted, to feed the dashboard

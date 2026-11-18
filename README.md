@@ -171,7 +171,7 @@ curl -X POST localhost:8000/chat -H 'Content-Type: application/json' \
 curl localhost:8000/health
 
 make traffic       # replay the eval questions so the dashboard has data
-make test          # 138 cases: unit + integration against the live index
+make test          # 142 cases: unit + integration against the live index
 make eval          # reproduce the retrieval results table
 make eval-chat     # chat layer: citations, guard, refusal
 make eval-weights  # RRF weight sweep
